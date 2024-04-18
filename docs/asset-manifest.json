@@ -1,8 +1,8 @@
 {
   "files": {
-    "main.js": "/static/js/main.eacaa0e7.js",
-    "index.html": "/index.html",
-    "main.eacaa0e7.js.map": "/static/js/main.eacaa0e7.js.map"
+    "main.js": "/moneyexchangeintec/static/js/main.eacaa0e7.js",
+    "index.html": "/moneyexchangeintec/index.html",
+    "main.eacaa0e7.js.map": "/moneyexchangeintec/static/js/main.eacaa0e7.js.map"
   },
   "entrypoints": [
     "static/js/main.eacaa0e7.js"
