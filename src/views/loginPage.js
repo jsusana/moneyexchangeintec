@@ -14,7 +14,6 @@ export default function LoginPage() {
   const screens = useBreakpoint();
 
   const onFinish = (values) => {
-    console.log("Received values of form: ", values);
     let password = values.password;
     let username = values.email;
     if (password.length == 0 || username.length == 0) {
@@ -27,6 +26,8 @@ export default function LoginPage() {
         let user = resp.data[0];
         if (user.password === password)
           window.location.href = '/#/home';
+        else
+          alert("Credenciales inválidas.");
       }
       else      
         alert("Credenciales inválidas.");      

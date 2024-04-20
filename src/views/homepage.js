@@ -64,6 +64,13 @@ const HomePage = () => {
   };
 
   const processTransaction = async (e) => {
+
+    if (!clientFirstName || !clientLastName || !currencyFrom || !currencyTo || !amount)
+    {
+      alert('Complete todos los datos antes de procesar la transacción.');
+      return;
+    }
+
     setLoading(!loading);
     let clientId = 0;
     if (newClient) {
@@ -111,17 +118,13 @@ const HomePage = () => {
 
     let newAmount = amount / cFrom.val;
     newAmount = newAmount * cTo.val;
-    console.log((Math.round(newAmount * 100) / 100).toFixed(2));
     setConvertedAmount((Math.round(newAmount * 100) / 100).toFixed(2));
   }, [amount, currencyFrom, currencyTo]);
 
   useEffect(() => {
     const reloadClients = () => {
-      console.log(clients);
         axios.get(`https://casa-cambio-api-2f47usihma-ue.a.run.app/user/all`).then(resp => {
-          console.log(resp);
           if (resp.data.length > 0) {
-            console.log(resp.data);
             let _cs = resp.data.filter(x => x.roleId == 2).map(c => { return { value: c.lastName + ', ' + c.firstName } });
             setClients(_cs);
           }
@@ -139,7 +142,7 @@ const HomePage = () => {
     >
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
         <div className="demo-logo-vertical" />
-        <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} onClick={(item, key, keyPath, selectedKeys, domEvent) => { window.location.href = '/' + item.key }} />
+        <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} onClick={(item, key, keyPath, selectedKeys, domEvent) => { window.location.href = '/#/' + item.key }} />
       </Sider>
       <Layout>
         <Header
@@ -261,7 +264,7 @@ const HomePage = () => {
           <div style={{ marginTop: 30 }}>
             <Divider orientation='center'>
               <>
-                {!loading && <Button type='primary' onClick={(e) => { processTransaction(e).then(() => alert('Transacción procesada')); }}>Procesar Transacción</Button>}
+                {!loading && <Button type='primary' onClick={(e) => { processTransaction(e).then(() => console.log('Transacción procesada')); }}>Procesar Transacción</Button>}
                 {loading && <Button disabled={true} type='default' onClick={(e) => { setLoading(!loading) }}> <Spin /> </Button>}
               </>
             </Divider>

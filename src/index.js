@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import {createBrowserRouter,RouterProvider} from "react-router-dom";
 import LoginPage from './views/loginPage';
 import HomePage from './views/homepage';
-import ClientsPage from './views/clientsPage';
+import ReportsPage from './views/reportsPage';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -13,7 +13,7 @@ root.render(
       <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/home" element={<HomePage />} />
-      <Route path="/clients" element={<ClientsPage />} />
+      <Route path="/reports" element={<ReportsPage />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>
