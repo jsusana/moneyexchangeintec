@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   DesktopOutlined,
   FileOutlined,
@@ -22,9 +23,6 @@ function getItem(label, key, icon, children) {
 }
 const items = [
   getItem('Money Exchange', 'home', <MoneyCollectOutlined />),
-  getItem('Transacciones', 'transactions', <DesktopOutlined />),
-  getItem('Clientes', 'clients', <UserOutlined />),
-  getItem('Facturas', 'invoices', <FileOutlined />),
   getItem('Reportes', 'reports', <FileOutlined />),
 ];
 
@@ -45,6 +43,7 @@ const HomePage = () => {
   const [currencyTo, setCurrencyTo] = useState('');
   const [amount, setAmount] = useState(0.00);
   const [convertedAmount, setConvertedAmount] = useState(0.00);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const currencies = [
@@ -64,6 +63,40 @@ const HomePage = () => {
     return `1 USD = ${_c.code} ${_c.val}`;
   };
 
+  const processTransaction = async (e) => {
+    setLoading(!loading);
+    let clientId = 0;
+    if (newClient) {
+      let clientPayload = {
+        firstName: clientFirstName,
+        lastName: clientLastName,
+        roleId: 2,
+        username: '',
+        password: ''
+      }
+      
+      let clientResp = await axios.post('https://casa-cambio-api-2f47usihma-ue.a.run.app/user/create', clientPayload);
+      let _clients = await axios.get(`https://casa-cambio-api-2f47usihma-ue.a.run.app/user/all`);
+      clientId = _clients.data.slice(-1).userId;
+    }
+
+    if (clientId <= 0) {
+      let _clients2 = (await axios.get(`https://casa-cambio-api-2f47usihma-ue.a.run.app/user/all`)).data;
+      clientId = _clients2.filter(c => c.firstName == clientFirstName && c.lastName == clientLastName)[0].userId;
+    }
+
+    let transactionPayload = {
+      clientId: clientId,
+      employeeId: 1,
+      amount: amount,
+      currencyFrom: currencyFrom,
+      currencyTo: currencyTo
+    }
+
+    let trans_response = await axios.post('https://casa-cambio-api-2f47usihma-ue.a.run.app/transaction/create', transactionPayload);
+    window.location.reload();
+  };
+
   useEffect(() => {
     setcurrencyFromLegend(getCurrencyLegend(1));
     setcurrencyToLegend(getCurrencyLegend(2));
@@ -77,10 +110,26 @@ const HomePage = () => {
     let cTo = _cs[0];
 
     let newAmount = amount / cFrom.val;
-    newAmount = newAmount * cTo.val;  
+    newAmount = newAmount * cTo.val;
     console.log((Math.round(newAmount * 100) / 100).toFixed(2));
     setConvertedAmount((Math.round(newAmount * 100) / 100).toFixed(2));
   }, [amount, currencyFrom, currencyTo]);
+
+  useEffect(() => {
+    const reloadClients = () => {
+      console.log(clients);
+        axios.get(`https://casa-cambio-api-2f47usihma-ue.a.run.app/user/all`).then(resp => {
+          console.log(resp);
+          if (resp.data.length > 0) {
+            console.log(resp.data);
+            let _cs = resp.data.filter(x => x.roleId == 2).map(c => { return { value: c.lastName + ', ' + c.firstName } });
+            setClients(_cs);
+          }
+        });
+    }
+
+    reloadClients();
+  }, []);
 
   return (
     <Layout
@@ -122,67 +171,57 @@ const HomePage = () => {
           >
             <Divider orientation='left'><Text style={{ fontSize: 20, fontWeight: 'bolder' }}><UserOutlined /> Cliente</Text></Divider>
             <Row>
-                <Col span={4}><Checkbox value={newClient} onChange={e => setNewClient(e.target.checked)}>¿Nuevo cliente?</Checkbox></Col>
-                {!newClient && <Col span={20}>
+              <Col span={4}><Checkbox value={newClient} onChange={e => setNewClient(e.target.checked)}>¿Nuevo cliente?</Checkbox></Col>
+              {!newClient && <Col span={20}>
                 <Select
                   showSearch
                   placeholder="Seleccione un cliente..."
                   optionFilterProp="children"
                   filterOption={filterOption}
                   value={(() => clientLastName ? `${clientLastName}, ${clientFirstName}` : null)()}
-                  onChange={(value) => {setClientLastName(value.split(',')[0].trim()); setClientFirstName(value.split(',')[1].trim());}}
+                  onChange={(value) => { setClientLastName(value.split(',')[0].trim()); setClientFirstName(value.split(',')[1].trim()); }}
                   style={{ width: '100%' }}
-                  options={[
-                    {
-                      value: 'Susana Feliz, Juan Marcos',
-                    },
-                    {
-                      value: 'Brito, Claudio',
-                    },
-                    {
-                      value: 'Santiago, Fernandez',
-                    },
-                  ]}
+                  options={clients}
                 />
+              </Col>
+              }
+              {newClient && <>
+                <Col span={10}>
+                  <Input addonBefore={"Nombre(s): "} value={clientFirstName} onChange={(value) => setClientFirstName(value.target.value)} />
                 </Col>
-                }
-                { newClient && <>
-                    <Col span={10}>
-                      <Input addonBefore={"Nombre(s): "} value={clientFirstName} onChange={(value) => setClientFirstName(value.target.value) } />
-                    </Col>
-                    <Col span={10}>
-                    <Input addonBefore={"Apellido(s): "} value={clientLastName} onChange={(value) => setClientLastName(value.target.value) } />
-                    </Col>
-                  </>
-                }
+                <Col span={10}>
+                  <Input addonBefore={"Apellido(s): "} value={clientLastName} onChange={(value) => setClientLastName(value.target.value)} />
+                </Col>
+              </>
+              }
             </Row>
 
-            <div style={{marginTop: 30}}>
+            <div style={{ marginTop: 30 }}>
               <Divider orientation='left'><Text style={{ fontSize: 20, fontWeight: 'bolder' }}><UnorderedListOutlined /> Detalles</Text></Divider>
             </div>
 
             <Row gutter={16}>
               <Col span={6}>
-              <Form.Item label="Moneda recibida: " name="currencyFrom" help={currencyfromlegend}>
-                <Select
-                  value={currencyFrom}
-                  onChange={value => setCurrencyFrom(value)}
-                  options={[
-                    {
-                      value: 'Dolar estadounidense',
-                    },
-                    {
-                      value: 'Euro',
-                    },
-                    {
-                      value: 'Dolar canadiense',
-                    },
-                    {
-                      value: 'Peso dominicano',
-                    }
-                  ]}
-                />
-              </Form.Item>
+                <Form.Item label="Moneda recibida: " name="currencyFrom" help={currencyfromlegend}>
+                  <Select
+                    value={currencyFrom}
+                    onChange={value => setCurrencyFrom(value)}
+                    options={[
+                      {
+                        value: 'Dolar estadounidense',
+                      },
+                      {
+                        value: 'Euro',
+                      },
+                      {
+                        value: 'Dolar canadiense',
+                      },
+                      {
+                        value: 'Peso dominicano',
+                      }
+                    ]}
+                  />
+                </Form.Item>
               </Col>
               <Col span={6}>
                 <Form.Item label="Cantidad: " name="amount">
@@ -190,43 +229,43 @@ const HomePage = () => {
                 </Form.Item>
               </Col>
               <Col span={6}>
-              <Form.Item label="Moneda recibida: " name="currencyFrom" help={currencytolegend}>
-                <Select
-                  value={currencyTo}
-                  onChange={value => setCurrencyTo(value)}
-                  options={[
-                    {
-                      value: 'Dolar estadounidense',
-                    },
-                    {
-                      value: 'Euro',
-                    },
-                    {
-                      value: 'Dolar canadiense',
-                    },
-                    {
-                      value: 'Peso dominicano',
-                    }
-                  ]}
-                />
-              </Form.Item>
+                <Form.Item label="Moneda recibida: " name="currencyFrom" help={currencytolegend}>
+                  <Select
+                    value={currencyTo}
+                    onChange={value => setCurrencyTo(value)}
+                    options={[
+                      {
+                        value: 'Dolar estadounidense',
+                      },
+                      {
+                        value: 'Euro',
+                      },
+                      {
+                        value: 'Dolar canadiense',
+                      },
+                      {
+                        value: 'Peso dominicano',
+                      }
+                    ]}
+                  />
+                </Form.Item>
               </Col>
               <Col span={6}>
                 <Form.Item label="Cantidad: " name="amount">
-                  <Text style={{fontWeight: 'bolder'}}>{new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD'}).format(convertedAmount)}</Text>
+                  <Text style={{ fontWeight: 'bolder' }}>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(convertedAmount)}</Text>
                 </Form.Item>
               </Col>
             </Row>
           </div>
 
-          <div style={{marginTop: 30}}>
-              <Divider orientation='center'>
-                <>
-                  {!loading && <Button type='primary' onClick={(e) => {setLoading(!loading)}}>Procesar Transacción</Button>}
-                  {loading && <Button disabled={true} type='default' onClick={(e) => {setLoading(!loading)}}> <Spin /> </Button>}
-                </>
-              </Divider>
-            </div>
+          <div style={{ marginTop: 30 }}>
+            <Divider orientation='center'>
+              <>
+                {!loading && <Button type='primary' onClick={(e) => { processTransaction(e).then(() => alert('Transacción procesada')); }}>Procesar Transacción</Button>}
+                {loading && <Button disabled={true} type='default' onClick={(e) => { setLoading(!loading) }}> <Spin /> </Button>}
+              </>
+            </Divider>
+          </div>
         </Content>
         <Footer
           style={{

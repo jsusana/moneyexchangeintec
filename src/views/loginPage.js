@@ -12,20 +12,26 @@ const { Text, Title, Link } = Typography;
 export default function LoginPage() {
   const { token } = useToken();
   const screens = useBreakpoint();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [usersList, setUserList] = useState([]);
 
   const onFinish = (values) => {
     console.log("Received values of form: ", values);
-  };
-
-  useEffect(() => {
-    async function GetUsersList() {
-
+    let password = values.password;
+    let username = values.email;
+    if (password.length == 0 || username.length == 0) {
+      alert('Usuario y contraseña son requeridos para acceder al sitio.');
+      return;
     }
-  }, []);
-  
+
+    axios.get(`https://casa-cambio-api-2f47usihma-ue.a.run.app/user/getUserByUsername/${username}`).then(resp => {
+      if (resp.data.length > 0) {
+        let user = resp.data[0];
+        if (user.password === password)
+          window.location.href = '/#/home';
+      }
+      else      
+        alert("Credenciales inválidas.");      
+    }).catch(err => {alert("Ha ocurrido un error inesperado. Favor ponerse en contacto con soporte técnico.");});
+  };
 
   const styles = {
     container: {
@@ -79,16 +85,9 @@ export default function LoginPage() {
         >
           <Form.Item
             name="email"
-            rules={[
-              {
-                type: "email",
-                required: true,
-                message: "Please input your Email!",
-              },
-            ]}
           >
             <Input
-              prefix={<MailOutlined value={username} onChange={(e) => setUsername(e.target.value)} />}
+              prefix={<MailOutlined />}
               placeholder="Usuario"
             />
           </Form.Item>
@@ -105,12 +104,10 @@ export default function LoginPage() {
               prefix={<LockOutlined />}
               type="password"
               placeholder="Contraseña"
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
             />
           </Form.Item>
           <Form.Item style={{ marginBottom: "0px" }}>
-            <Button block="true" type="primary" htmlType="submit" onClick={e => { window.location.href = "/home" }}>
+            <Button block="true" type="primary" htmlType="submit">
               Acceder
             </Button>
             <div style={styles.footer}>
